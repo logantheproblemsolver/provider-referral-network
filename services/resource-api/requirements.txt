@@ -1,0 +1,12 @@
+fastapi[standard]
+uvicorn[standard]
+requests
+fastapi[standard]
+uvicorn[standard]
+sqlalchemy[asyncio]
+asyncpg
+alembic
+pydantic-settings
+bcrypt
+PyJWT[crypto]
+httpx

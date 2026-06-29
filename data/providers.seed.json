@@ -1,0 +1,17 @@
+[
+  { "npi": "0000000001", "name": "Northgate Family Medicine", "specialty": "Family Practice", "taxonomy": "207Q00000X", "region": "Northeast", "state": "PA", "accepting_new_patients": true },
+  { "npi": "0000000002", "name": "Lakeside Internal Medicine Group", "specialty": "Internal Medicine", "taxonomy": "207R00000X", "region": "Central", "state": "OH", "accepting_new_patients": true },
+  { "npi": "0000000003", "name": "Summit Cardiology Associates", "specialty": "Cardiology", "taxonomy": "207RC0000X", "region": "Southeast", "state": "GA", "accepting_new_patients": false },
+  { "npi": "0000000004", "name": "Riverbend Pediatrics", "specialty": "Pediatrics", "taxonomy": "208000000X", "region": "Southeast", "state": "FL", "accepting_new_patients": true },
+  { "npi": "0000000005", "name": "Cedar Hollow Neurology", "specialty": "Neurology", "taxonomy": "2084N0400X", "region": "Northeast", "state": "NY", "accepting_new_patients": true },
+  { "npi": "0000000006", "name": "Prairie View Orthopedics", "specialty": "Orthopedic Surgery", "taxonomy": "207X00000X", "region": "Central", "state": "IL", "accepting_new_patients": false },
+  { "npi": "0000000007", "name": "Harbor Point Dermatology", "specialty": "Dermatology", "taxonomy": "207N00000X", "region": "Northeast", "state": "MA", "accepting_new_patients": true },
+  { "npi": "0000000008", "name": "Maple Grove Behavioral Health", "specialty": "Psychiatry", "taxonomy": "2084P0800X", "region": "Central", "state": "MI", "accepting_new_patients": true },
+  { "npi": "0000000009", "name": "Stonebridge Endocrinology", "specialty": "Endocrinology", "taxonomy": "207RE0101X", "region": "Southeast", "state": "NC", "accepting_new_patients": true },
+  { "npi": "0000000010", "name": "Westfield Urgent Care", "specialty": "Urgent Care", "taxonomy": "261QU0200X", "region": "Pennsylvania", "state": "PA", "accepting_new_patients": true },
+  { "npi": "0000000011", "name": "Brookline OB-GYN Partners", "specialty": "Obstetrics & Gynecology", "taxonomy": "207V00000X", "region": "Northeast", "state": "PA", "accepting_new_patients": false },
+  { "npi": "0000000012", "name": "Cypress Oncology Center", "specialty": "Hematology & Oncology", "taxonomy": "207RH0003X", "region": "Southeast", "state": "TN", "accepting_new_patients": true },
+  { "npi": "0000000013", "name": "Ironwood Nephrology Clinic", "specialty": "Nephrology", "taxonomy": "207RN0300X", "region": "Central", "state": "MO", "accepting_new_patients": true },
+  { "npi": "0000000014", "name": "Fairhaven Pulmonary Associates", "specialty": "Pulmonology", "taxonomy": "207RP1001X", "region": "Central", "state": "WI", "accepting_new_patients": true },
+  { "npi": "0000000015", "name": "Greenfield Gastroenterology", "specialty": "Gastroenterology", "taxonomy": "207RG0100X", "region": "Southeast", "state": "SC", "accepting_new_patients": false }
+]

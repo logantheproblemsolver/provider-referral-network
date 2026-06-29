@@ -1,0 +1,36 @@
+# Env / secrets
+.env
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node / frontend
+node_modules/
+services/verification-svc/node_modules/ 
+dist/
+build/
+.next/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Alembic
+alembic/versions/*.pyc
+
+# TypeScript build output
+services/verification-svc/dist/
+
+# Test scripts / one-off files
+*.py.bak

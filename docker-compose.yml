@@ -1,0 +1,61 @@
+# Minimal infra for the take-home. Postgres is all you need to start.
+# The Keycloak block is commented out — uncomment it only if you choose to
+# satisfy the OpenID Connect requirement with a local identity provider.
+
+services:
+  resource-api:
+    build:
+      context: ./services/resource-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      verification-svc:
+        condition: service_started
+
+  verification-svc:
+    build:
+      context: ./services/verification-svc
+    ports:
+      - "9000:9000"
+    env_file:
+      - .env
+  
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - resource-api
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app}
+      POSTGRES_DB: ${POSTGRES_DB:-referral_network}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-referral_network}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    command: ["start-dev"]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME_URL: http://keycloak:8080
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:
