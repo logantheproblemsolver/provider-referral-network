@@ -128,7 +128,7 @@ async def oidc_login(
         await db.commit()
         await db.refresh(user)
 
-    token = create_access_token({"sub": str(user.id), "role": user.role})
+    token = create_access_token({"sub": str(user.id), "email": user.email, "role": user.role})
     return {"access_token": token, "token_type": "bearer"}
 
 

@@ -128,7 +128,6 @@ The shared `SERVICE_JWT_SECRET` is separate from `JWT_SECRET`: compromising one 
 **Skipped:**
 - Automated tests: given the 6-hour target, I prioritized a working end-to-end system over test coverage. I would add pytest + httpx integration tests for the API layer and verify the PKCE flow with Playwright.
 - Rate limiting: would add `slowapi` on auth endpoints in production
-- OpenAPI response schemas: FastAPI generates docs but response models aren't explicitly typed. Would add `response_model=` on all routes.
 
 ---
 

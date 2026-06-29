@@ -87,6 +87,9 @@ async def create_referral(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if body.referring_provider_id == body.referred_provider_id:
+        raise HTTPException(status_code=422, detail="A provider cannot refer to themselves")
+
     for provider_id in (body.referring_provider_id, body.referred_provider_id):
         result = await db.execute(select(Provider).where(Provider.id == provider_id))
         if not result.scalar_one_or_none():

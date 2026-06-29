@@ -1,16 +1,15 @@
 '''
 This file is for the API creation of the endpoints that involve CRUD operations for Providers
 '''
-
+import uuid
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select, func
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import datetime, timezone
-import uuid
-import httpx
-
 from app.database import get_db
 from app.models.provider import Provider
 from app.models.user import User
@@ -182,5 +181,9 @@ async def delete_provider(
     if not provider:
         raise HTTPException(status_code=404, detail="Provider not found")
 
-    await db.delete(provider)
-    await db.commit()
+    try:
+        await db.delete(provider)
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(status_code=409, detail="Cannot delete provider with existing referrals")
