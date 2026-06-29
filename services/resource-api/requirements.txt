@@ -1,6 +1,5 @@
 fastapi[standard]
 uvicorn[standard]
-requests
 fastapi[standard]
 uvicorn[standard]
 sqlalchemy[asyncio]
@@ -10,3 +9,4 @@ pydantic-settings
 bcrypt
 PyJWT[crypto]
 httpx
+slowapi

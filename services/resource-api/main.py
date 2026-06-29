@@ -4,10 +4,12 @@ This is the main file where the app is created and the routes are laid out
 from fastapi import FastAPI
 from config import settings
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from limiter import limiter
 from app.routers.auth import router as auth_router
 from app.routers.providers import router as providers_router
 from app.routers.referrals import router as referrals_router
-
 
 app = FastAPI()
 
@@ -21,6 +23,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.include_router(auth_router, prefix="/auth")
 app.include_router(providers_router, prefix="/providers")
 app.include_router(referrals_router, prefix="/referrals", tags=["referrals"])

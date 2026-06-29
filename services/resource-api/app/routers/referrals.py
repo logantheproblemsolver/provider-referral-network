@@ -1,15 +1,15 @@
 '''
 This API file is for the referral management system. All referral endpoints require authentication and either user or admin role can access any of the APIs.
 '''
-
+import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
-import uuid
 from datetime import datetime, timezone
-
+from main import limiter
+from fastapi import Request
 from app.database import get_db
 from app.models.referral import Referral
 from app.models.provider import Provider
@@ -54,7 +54,9 @@ class PaginatedReferrals(BaseModel):
 This API is a GET request that gets all referrals that have been created. The API supports pagination and also filtering by status
 '''
 @router.get("", response_model=PaginatedReferrals)
+@limiter.limit("10/minute")
 async def list_referrals(
+    request: Request,
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
     status: Optional[str] = None,
@@ -82,7 +84,9 @@ async def list_referrals(
 This API is a POST request that is used to create referrals, and the body of the request is based off of the ReferralCreate class. Both providers are are validated before creating the referral.
 '''
 @router.post("", status_code=201, response_model=ReferralOut)
+@limiter.limit("10/minute")
 async def create_referral(
+    request: Request,
     body: ReferralCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -109,7 +113,9 @@ async def create_referral(
 This API is a PATCH request that updates referrals by ID. Currently the only field that can be updated is the status field. It also makes sure that the status that's being updated is currently a valid status before we save to the DB. In production I'd probably update it to also do patients, but until Patients are real it wasn't worth building a patient verifier and creating fake PHI data for this coding challenge (I could if you'd like though)
 '''
 @router.patch("/{referral_id}", response_model=ReferralOut)
+@limiter.limit("10/minute")
 async def update_referral_status(
+    request: Request,
     referral_id: uuid.UUID,
     body: ReferralStatusUpdate,
     db: AsyncSession = Depends(get_db),

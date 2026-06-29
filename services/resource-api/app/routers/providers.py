@@ -16,6 +16,9 @@ from app.models.user import User
 from deps import get_current_user, require_admin
 from auth import create_service_token
 from config import settings
+from limiter import limiter
+from fastapi import Request
+
 
 router = APIRouter()
 
@@ -63,7 +66,9 @@ class PaginatedProviders(BaseModel):
 This API is a GET request that just lists all the providers with pagination
 '''
 @router.get("", response_model=PaginatedProviders)
+@limiter.limit("10/minute")
 async def list_providers(
+    request: Request,
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
     specialty: Optional[str] = None,
@@ -95,7 +100,9 @@ async def list_providers(
 This API is a GET request that allows you to get a single provider by ID
 '''
 @router.get("/{provider_id}", response_model=ProviderOut)
+@limiter.limit("10/minute")
 async def get_provider(
+    request: Request,
     provider_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -110,7 +117,9 @@ async def get_provider(
 This API is a POST request to create a provider. This requires authentication and an admin role to use. The status defaults to active (the thought process was someone wasn't going to upload an inactive provider), and then just accepts the model values. Something to add here is that this is the passthrough to test the verification service api as well.
 '''
 @router.post("", status_code=201, response_model=ProviderOut)
+@limiter.limit("10/minute")
 async def create_provider(
+    request: Request,
     body: ProviderCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_admin),
@@ -146,7 +155,9 @@ async def create_provider(
 This API is a PATCH request that allows you to update just about every value except npi, verified at, id, created_at and created by. It's using the ProviderUpdate class to figure out what is allowed to be updated. This is an authenticated endpoint that requires an admin role.
 '''
 @router.patch("/{provider_id}", status_code=200,  response_model=ProviderOut)
+@limiter.limit("10/minute")
 async def update_provider(
+    request: Request,
     provider_id: uuid.UUID,
     body: ProviderUpdate,
     db: AsyncSession = Depends(get_db),
@@ -171,7 +182,9 @@ async def update_provider(
 This API is a DELETE request to delete a provider by ID. This is an authenticated endpoint that requires an admin role
 '''
 @router.delete("/{provider_id}", status_code=204)
+@limiter.limit("10/minute")
 async def delete_provider(
+    request: Request,
     provider_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_admin),

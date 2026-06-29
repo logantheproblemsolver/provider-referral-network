@@ -124,10 +124,10 @@ The shared `SERVICE_JWT_SECRET` is separate from `JWT_SECRET`: compromising one 
 - **CORS origins**: pulled from config with a default of `localhost:5173`. Production would have no default and require explicit configuration per environment.
 - **No refresh tokens**: access tokens expire after 1 hour. Refresh token rotation is a stretch goal.
 - **HS256 for user JWTs**: resource-api is the only service that issues and verifies user tokens, so a symmetric secret is appropriate. RS256 would be necessary if other services needed to independently verify tokens without being trusted to issue them: in that case a JWKS endpoint would replace the shared secret. Keycloak uses RS256 for exactly this reason.
+- **Rate limiting**: implemented via `slowapi`. Auth endpoints (`/auth/register`, `/auth/login`, `/auth/oidc`) are limited to 5 requests/minute per IP; all other endpoints are limited to 10 requests/minute. The limiter is defined in its own `limiter.py` module to avoid circular imports. In production this would be backed by Redis so limits are shared across multiple instances, and trusted proxy IPs would be explicitly configured to prevent `X-Forwarded-For` spoofing. Auth endpoints would also be paired with account lockout after N consecutive failures since rate limiting slows brute force but a patient attacker who stays under the threshold can still make thousands of guesses per day.
 
 **Skipped:**
 - Automated tests: given the 6-hour target, I prioritized a working end-to-end system over test coverage. I would add pytest + httpx integration tests for the API layer and verify the PKCE flow with Playwright.
-- Rate limiting: would add `slowapi` on auth endpoints in production
 
 ---
 

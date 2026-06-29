@@ -15,6 +15,8 @@ from app.models.user import User
 from auth import create_access_token
 from config import settings
 from deps import get_current_user
+from limiter import limiter
+from fastapi import Request
 
 router = APIRouter()
 
@@ -62,7 +64,12 @@ async def me(current_user: User = Depends(get_current_user)):
 This API is a POST request that is used to register a user manually with a manual login and not an OIDC login. Something to note, for this POC I have made it to where the first user to register (or login with OIDC) are the admin. Something I thought about doing was making the roles based on the OIDC, but the issue was that I wanted to keep the user management on the server side and not depend on the OIDC which is why there's also a login portion as well.
 '''
 @router.post("/register", status_code=201, response_model=RegisterOut)
-async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")
+async def register(
+    request: Request, 
+    body: RegisterRequest, 
+    db: AsyncSession = Depends(get_db)
+):
     result = await db.execute(select(User).where(User.email == body.email))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=409, detail="Email already registered")
@@ -81,7 +88,12 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
 This API is a POST request used to login users that aren't logging in through OIDC. I kept this option to have a login system and show simple identity management through two different ways
 '''
 @router.post("/login", response_model=TokenOut)
-async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")
+async def login(
+    request: Request, 
+    body: LoginRequest, 
+    db: AsyncSession = Depends(get_db)
+):
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
     if not user or not bcrypt.checkpw(body.password.encode(), user.password_hash.encode()):
@@ -94,7 +106,9 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
 This API is a POST request to send the OIDC ID token to the resource api application so then we can create our own access token and also see what user just signed in. This gets the JWKS from the keycloak to validate the JWT and also the verify_aud is false due to this being a POC. In production I would verify the audience which for keycloak is the client id.
 '''
 @router.post("/oidc", response_model=TokenOut)
+@limiter.limit("5/minute")
 async def oidc_login(
+    request: Request,
     body: OIDCLogin,
     db: AsyncSession = Depends(get_db),
 ):
