@@ -112,18 +112,23 @@ async def oidc_login(
     body: OIDCLogin,
     db: AsyncSession = Depends(get_db),
 ):
-    async with httpx.AsyncClient() as client:
-        discovery = await client.get(settings.oidc_url)
-        jwks_uri = discovery.json()["jwks_uri"]
-    jwks_client = PyJWKClient(jwks_uri)
-    signing_key = jwks_client.get_signing_key_from_jwt(body.id_token)
-    claims = jwt.decode(
-        body.id_token,
-        signing_key.key,
-        algorithms=["RS256"],
-        options={"verify_aud": False},
-    )
-
+    try:
+        async with httpx.AsyncClient() as client:
+            discovery = await client.get(settings.oidc_url)
+            discovery.raise_for_status()
+            jwks_uri = discovery.json()["jwks_uri"]
+        jwks_client = PyJWKClient(jwks_uri)
+        signing_key = jwks_client.get_signing_key_from_jwt(body.id_token)
+        claims = jwt.decode(
+            body.id_token,
+            signing_key.key,
+            algorithms=["RS256"],
+            options={"verify_aud": False},
+        )
+    except httpx.RequestError:
+        raise HTTPException(status_code=503, detail="Identity provider unavailable")
+    except (jwt.InvalidTokenError, KeyError):
+        raise HTTPException(status_code=401, detail="Invalid ID token")
     email = claims.get("email")
     if not email:
         raise HTTPException(status_code=422, detail="ID token missing email claim")
