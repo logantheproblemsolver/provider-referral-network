@@ -8,7 +8,7 @@ Downstream microservice that verifies provider NPIs. Only accepts authenticated 
 ## Running locally
 ```bash
 npm install
-SERVICE_JWT_SECRET=<secret> npm run dev
+RESOURCE_API_JWKS_URL=http://localhost:8000/.well-known/jwks.json npm run dev
 ```
 
 ## Running via Docker
@@ -21,4 +21,4 @@ docker compose up verification-svc
 - `GET /verify/:npi` — verify an NPI (requires service JWT from resource-api)
 
 ## Auth
-Expects `Authorization: Bearer <token>` signed with `SERVICE_JWT_SECRET`, `iss=resource-api`, `aud=verification-svc`.
+Expects `Authorization: Bearer <token>` signed with resource-api's RS256 private key, `iss=resource-api`, `aud=verification-svc`. The middleware fetches resource-api's public keys from `RESOURCE_API_JWKS_URL`, matches by `kid`, and validates the signature. Keys are cached for 10 minutes and refreshed automatically on unknown `kid`.

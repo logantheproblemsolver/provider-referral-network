@@ -12,8 +12,11 @@ cp .env.example .env
 ```
 Edit `.env` and set:
 - `JWT_SECRET`: at least 32 characters
-- `SERVICE_JWT_SECRET`: at least 32 characters
 - `OIDC_URL`: Keycloak discovery URL (e.g. `http://keycloak:8080/realms/referral-network/.well-known/openid-configuration`)
+- `SERVICE_PRIVATE_KEY_1`: base64-encoded RSA private key — generate with `openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 | base64 | tr -d '\n'`
+- `SERVICE_PRIVATE_KEY_2`: optional second key for rotation (leave empty if not rotating)
+- `SERVICE_ACTIVE_KID`: `key-1` or `key-2` — controls which key signs new service tokens
+- `RESOURCE_API_JWKS_URL`: `http://resource-api:8000/.well-known/jwks.json`
 
 ### 2. Start All Services
 ```bash
@@ -106,12 +109,13 @@ PKCE is used because this is a browser-based SPA with no client secret: PKCE rep
 When `POST /providers` is called, resource-api must verify the NPI with verification-svc before persisting. verification-svc rejects unauthenticated callers.
 
 **Flow:**
-1. resource-api calls `create_service_token()` which signs a short-lived HS256 JWT with `iss=resource-api`, `aud=verification-svc`, and a 5-minute expiry using `SERVICE_JWT_SECRET`
+1. resource-api calls `create_service_token()` which signs a short-lived RS256 JWT with `iss=resource-api`, `aud=verification-svc`, a 5-minute expiry, and a `kid` header identifying which key signed it
 2. resource-api calls `GET /verify/:npi` on verification-svc with `Authorization: Bearer <token>`
-3. verification-svc's auth middleware validates the signature, issuer, and audience explicitly
-4. If verification-svc is unreachable, resource-api returns 503. If verification fails, it returns 422.
+3. verification-svc's auth middleware fetches resource-api's JWKS from `GET /.well-known/jwks.json`, matches the key by `kid`, and validates the RS256 signature, issuer, and audience
+4. The JWKS response is cached for 10 minutes; on an unknown `kid`, `jwks-rsa` re-fetches automatically
+5. If verification-svc is unreachable, resource-api returns 503. If verification fails, it returns 422.
 
-The shared `SERVICE_JWT_SECRET` is separate from `JWT_SECRET`: compromising one does not compromise the other. In a production system I would replace the shared secret with asymmetric keys (resource-api signs with a private key, verification-svc validates with the public key) to remove the need to share a secret at all.
+**Key rotation** is supported without sharing any secret. Two keys (`SERVICE_PRIVATE_KEY_1`, `SERVICE_PRIVATE_KEY_2`) can be loaded simultaneously — both are published in the JWKS so tokens signed with either key remain valid. `SERVICE_ACTIVE_KID` controls which key signs new tokens. To rotate: load a new key, switch `SERVICE_ACTIVE_KID`, restart resource-api. After 5 minutes (token expiry), all tokens signed with the old key are expired and it can be removed. In production, keys would be stored in a secrets manager and rotated without restart.
 
 ---
 
@@ -133,9 +137,9 @@ The shared `SERVICE_JWT_SECRET` is separate from `JWT_SECRET`: compromising one 
 
 ## What I'd Do With More Time
 
-1. **Asymmetric service-to-service auth**: replace the shared `SERVICE_JWT_SECRET` with a private/public key pair. resource-api signs, verification-svc validates with the public key. No shared secret needed.
-2. **Refresh tokens with rotation**: short-lived access tokens + longer-lived refresh tokens stored server-side, invalidated on use
-3. **Integration tests**: pytest + httpx against a real test database, Playwright for the PKCE flow
-4. **Patient resource**: a proper patients table with its own endpoints and access controls, replacing the opaque `patient_ref` string
-5. **Deeper RBAC**: currently binary admin/user. A production system would have more granular permissions (e.g. only the referring provider can update a referral's status)
-6. **JWKS key rotation**: cache the JWKS with a TTL and refresh on unknown `kid` rather than fetching on every OIDC login
+1. **Refresh tokens with rotation**: short-lived access tokens + longer-lived refresh tokens stored server-side, invalidated on use
+2. **Integration tests**: pytest + httpx against a real test database, Playwright for the PKCE flow
+3. **Patient resource**: a proper patients table with its own endpoints and access controls, replacing the opaque `patient_ref` string
+4. **Deeper RBAC**: currently binary admin/user. A production system would have more granular permissions (e.g. only the referring provider can update a referral's status)
+5. **Secrets manager integration**: move `SERVICE_PRIVATE_KEY_1/2` out of `.env` and into AWS Secrets Manager or Vault, with hot reload so key rotation doesn't require a restart
+6. **JWKS key rotation for Keycloak tokens**: cache the Keycloak JWKS with a TTL and refresh on unknown `kid` rather than fetching on every OIDC login

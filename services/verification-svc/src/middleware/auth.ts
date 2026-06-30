@@ -1,35 +1,46 @@
 /**
  * This file is for the authentication middleware to make sure that this service can't be accessed without authentication
  */
-import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { JwksClient } from 'jwks-rsa';
+import { Request, Response, NextFunction } from 'express';
 
-const SERVICE_JWT_SECRET = process.env.SERVICE_JWT_SECRET;
-
-// This will make sure that if there is no service_jwt_secret the application will crash
-if (!SERVICE_JWT_SECRET) {
-  console.error('SERVICE_JWT_SECRET is required');
-  process.exit(1);
+const JWKS_URL = process.env.RESOURCE_API_JWKS_URL;
+if (!JWKS_URL) {
+  throw new Error('RESOURCE_API_JWKS_URL is required');
 }
 
-/**
- * This validates the service JWT from resource-api, checking the signature, issuer, audience, and expiry
- */
+const jwksClient = new JwksClient({
+  jwksUri: JWKS_URL,
+  cache: true,
+  cacheMaxAge: 10 * 60 * 1000,
+});
+
+function getSigningKey(header: jwt.JwtHeader, callback: jwt.SigningKeyCallback): void {
+  jwksClient.getSigningKey(header.kid, (err, key) => {
+    if (err || !key) return callback(err ?? new Error('Signing key not found'));
+    callback(null, key.getPublicKey());
+  });
+}
+
 export function requireServiceAuth(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
+  console.log("auth header", authHeader)
+  if (!authHeader || typeof authHeader !== 'string' || !authHeader.startsWith('Bearer ')) {
     res.status(401).json({ error: 'Missing authorization header' });
     return;
   }
   const token = authHeader.slice(7);
-  try {
-    jwt.verify(token, SERVICE_JWT_SECRET as string, {
-      issuer: 'resource-api',
-      audience: 'verification-svc',
-      algorithms: ['HS256'],
-    });
-    next();
-  } catch {
-    res.status(401).json({ error: 'Invalid or expired service token' });
-  }
+  jwt.verify(
+    token,
+    getSigningKey,
+    { issuer: 'resource-api', audience: 'verification-svc', algorithms: ['RS256'] },
+    (err) => {
+      if (err) {
+        res.status(401).json({ error: 'Invalid or expired service token' });
+        return;
+      }
+      next();
+    }
+  );
 }

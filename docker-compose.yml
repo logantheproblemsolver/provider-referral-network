@@ -13,8 +13,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      verification-svc:
-        condition: service_started
 
   verification-svc:
     build:
@@ -23,6 +21,8 @@ services:
       - "9000:9000"
     env_file:
       - .env
+    depends_on:
+      - resource-api
   
   frontend:
     build:

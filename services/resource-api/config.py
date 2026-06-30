@@ -12,7 +12,6 @@ class Settings(BaseSettings):
     database_url: str
     verification_svc_url: str
     oidc_url: str
-    service_jwt_secret: str
     cors_origins: str = "http://localhost:5173"
 
 

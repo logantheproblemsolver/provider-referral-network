@@ -1,6 +1,8 @@
 '''
 This is the main file where the app is created and the routes are laid out
 '''
+import json
+from jwt.algorithms import RSAAlgorithm
 from fastapi import FastAPI
 from config import settings
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +12,7 @@ from limiter import limiter
 from app.routers.auth import router as auth_router
 from app.routers.providers import router as providers_router
 from app.routers.referrals import router as referrals_router
+from keys import all_public_keys
 
 app = FastAPI()
 
@@ -29,7 +32,16 @@ app.include_router(auth_router, prefix="/auth")
 app.include_router(providers_router, prefix="/providers")
 app.include_router(referrals_router, prefix="/referrals", tags=["referrals"])
 
-@app.get("/")
+@app.get("/health")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "I'm healthy"}
 
+@app.get("/.well-known/jwks.json")
+async def jwks():
+    keys = []
+    for kid, public_key in all_public_keys().items():
+        jwk = json.loads(RSAAlgorithm.to_jwk(public_key))
+        jwk["kid"] = kid
+        jwk["use"] = "sig"
+        keys.append(jwk)
+    return {"keys": keys}

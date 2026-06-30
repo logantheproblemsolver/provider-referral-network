@@ -9,6 +9,8 @@ Service Token: Used by the verification service when verifying an NPI on Provide
 import jwt
 from datetime import datetime, timezone, timedelta
 from config import settings
+from keys import get_private_key, get_active_kid
+
 
 '''
 This function creates a simple access token in JWT format for a user
@@ -22,7 +24,7 @@ def create_access_token(data: dict) -> str:
     return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
 
 '''
-This function created a service token to access the verification service APIs in JWT format. It's signed with a SERVICE_JWT_SECRET (separate from the other JWT secret), and includes the iss and aud since those are two values that the verification service validates. Also the token expires after 5 minutes so they are short lived.
+This function created a service token to access the verification service APIs in JWT format. It's signed with a private key, and includes the iss and aud since those are two values that the verification service validates. Also the token expires after 5 minutes so they are short lived.
 '''
 def create_service_token() -> str:
     payload = {
@@ -31,4 +33,4 @@ def create_service_token() -> str:
         "iat": datetime.now(timezone.utc),
         "exp": datetime.now(timezone.utc) + timedelta(minutes=5),
     }
-    return jwt.encode(payload, settings.service_jwt_secret, algorithm="HS256")
+    return jwt.encode(payload, get_private_key(), algorithm="RS256", headers={"kid": get_active_kid()})

@@ -8,7 +8,7 @@ from sqlalchemy import select, func
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import datetime, timezone
-from main import limiter
+from limiter import limiter
 from fastapi import Request
 from app.database import get_db
 from app.models.referral import Referral
