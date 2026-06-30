@@ -25,7 +25,6 @@ function getSigningKey(header: jwt.JwtHeader, callback: jwt.SigningKeyCallback):
 
 export function requireServiceAuth(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
-  console.log("auth header", authHeader)
   if (!authHeader || typeof authHeader !== 'string' || !authHeader.startsWith('Bearer ')) {
     res.status(401).json({ error: 'Missing authorization header' });
     return;
